@@ -49,3 +49,9 @@ export interface MenuData {
   rules: Rule[];
   ingredientStock: Record<string, number>;
 }
+
+export interface ValidationViolation {
+  groupId: string;
+  ruleId: string;
+  message: string;
+}
