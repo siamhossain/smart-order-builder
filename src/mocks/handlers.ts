@@ -1,4 +1,5 @@
 import { http, HttpResponse } from "msw";
+import { menuData } from "./data/menu";
 
 export const handlers = [
   http.get("/api/health", () => {
@@ -6,5 +7,9 @@ export const handlers = [
       status: "ok",
       message: "MSW is working!",
     });
+  }),
+
+  http.get("/api/menu", () => {
+    return HttpResponse.json(menuData);
   }),
 ];
