@@ -1,10 +1,11 @@
 import type { MenuData } from "../../types/menu";
 
+// Appendix A of the brief. All prices are in poisha (25000 = 250.00 BDT).
 export const menuData: MenuData = {
   product: {
     id: "build-your-breakfast",
     name: "Build Your Breakfast",
-    basePrice: 250,
+    basePrice: 25000,
   },
 
   groups: [
@@ -23,13 +24,13 @@ export const menuData: MenuData = {
         {
           id: "paratha",
           name: "Paratha",
-          price: 20,
+          price: 2000,
           ingredients: { paratha: 1 },
         },
         {
           id: "croissant",
           name: "Croissant",
-          price: 60,
+          price: 6000,
           ingredients: { croissant: 1 },
         },
       ],
@@ -44,19 +45,19 @@ export const menuData: MenuData = {
         {
           id: "fried",
           name: "Fried",
-          price: 30,
+          price: 3000,
           ingredients: { egg: 1 },
         },
         {
           id: "scrambled",
           name: "Scrambled",
-          price: 35,
+          price: 3500,
           ingredients: { egg: 1 },
         },
         {
           id: "omelette",
           name: "Omelette",
-          price: 70,
+          price: 7000,
           ingredients: { egg: 2 },
         },
       ],
@@ -70,19 +71,19 @@ export const menuData: MenuData = {
         {
           id: "sausage",
           name: "Chicken Sausage",
-          price: 60,
+          price: 6000,
           ingredients: { sausage: 1 },
         },
         {
           id: "bacon",
           name: "Beef Bacon",
-          price: 90,
+          price: 9000,
           ingredients: { bacon: 1 },
         },
         {
           id: "tofu",
           name: "Tofu",
-          price: 50,
+          price: 5000,
           ingredients: { tofu: 1 },
         },
       ],
@@ -96,25 +97,25 @@ export const menuData: MenuData = {
         {
           id: "hashbrown",
           name: "Hash Brown",
-          price: 40,
+          price: 4000,
           ingredients: { hashbrown: 1 },
         },
         {
           id: "mushroom",
           name: "Mushroom",
-          price: 30,
+          price: 3000,
           ingredients: { mushroom: 1 },
         },
         {
           id: "beans",
           name: "Baked Beans",
-          price: 25,
+          price: 2500,
           ingredients: { beans: 1 },
         },
         {
           id: "cheese",
           name: "Cheese",
-          price: 35,
+          price: 3500,
           ingredients: { cheese: 1 },
         },
       ],
@@ -135,13 +136,13 @@ export const menuData: MenuData = {
         {
           id: "hollandaise",
           name: "Hollandaise",
-          price: 25,
+          price: 2500,
           ingredients: { hollandaise: 1 },
         },
         {
           id: "chili",
           name: "Chili",
-          price: 10,
+          price: 1000,
           ingredients: {},
         },
       ],
@@ -189,5 +190,45 @@ export const menuData: MenuData = {
     beans: 8,
     cheese: 4,
     hollandaise: 5,
+  },
+
+  pricing: {
+    vatPercent: 5,
+
+    unitPromotions: [
+      {
+        id: "P2",
+        type: "freeCheapest",
+        groupId: "extras",
+        everyN: 3,
+      },
+      {
+        id: "P1",
+        type: "comboPercent",
+        conditions: [
+          { groupId: "eggs", minUnits: 4 },
+          { groupId: "protein", minUnits: 2 },
+        ],
+        percentOff: 10,
+      },
+    ],
+
+    cartPromotions: [
+      {
+        id: "C1",
+        type: "cartAmountOff",
+        minSubtotal: 120000,
+        amountOff: 10000,
+      },
+      {
+        id: "C2",
+        type: "couponPercent",
+        code: "MORNING15",
+        percentOff: 15,
+        cap: 15000,
+        validBefore: "11:00",
+        timeZone: "Asia/Dhaka",
+      },
+    ],
   },
 };
