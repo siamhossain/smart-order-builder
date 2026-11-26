@@ -4,6 +4,8 @@ import { priceCart } from "../engine/pricing";
 import type { ApiError } from "../types/cart";
 import type { CartInput } from "../types/pricing";
 import type { ProductConfig } from "../types/menu";
+import type { PaymentMethod } from "../types/order";
+import { checkout, toOrdersFile } from "./server/orders";
 import { serverNow } from "./server/clock";
 import {
   clearState,
@@ -124,6 +126,43 @@ export const handlers = [
     const now = serverNow();
     const breakdown = priceCart(body, menuData, menuData.pricing, new Date(now));
     return HttpResponse.json({ breakdown, serverTime: new Date(now).toISOString() });
+  }),
+
+  // Pay: turns the active cart items into ONE order.
+  http.post("/api/checkout", async ({ request }) => {
+    const body = (await request.json()) as {
+      idempotencyKey?: string;
+      paymentMethod?: PaymentMethod;
+      couponCode?: string | null;
+    };
+    if (!body.idempotencyKey || !body.paymentMethod) {
+      return errorResponse(400, { code: "BAD_REQUEST", message: "idempotencyKey and paymentMethod are required" });
+    }
+    const input = {
+      idempotencyKey: body.idempotencyKey,
+      paymentMethod: body.paymentMethod,
+      couponCode: body.couponCode ?? null,
+    };
+
+    await delay(randomBetween(300, 900));
+    const now = serverNow();
+    const result = checkout(currentState(now), menuData, input, now);
+    if (!result.ok) return errorResponse(result.status, result.error);
+
+    if (Math.random() < CART_FAIL_RATE) {
+      return errorResponse(503, { code: "SERVER_ERROR", message: "Payment failed, nothing was charged or saved. Please retry." });
+    }
+
+    commit(result.state);
+    const order = result.state.orders.find((o) => o.id === result.itemId);
+    return HttpResponse.json({ order, cart: toSnapshot(result.state, now), serverTime: new Date(now).toISOString() });
+  }),
+
+  // Every order (seed + new), in the documented orders.json shape.
+  http.get("/api/orders", async () => {
+    await delay(randomBetween(100, 300));
+    const now = serverNow();
+    return HttpResponse.json({ ...toOrdersFile(db.orders, now), serverTime: new Date(now).toISOString() });
   }),
 
   // Dev helper: start again with full stock and an empty cart.

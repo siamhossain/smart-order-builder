@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { setupServer } from "msw/node";
 import { handlers } from "../handlers";
 import { itemA } from "../../engine/__tests__/testItems";
+import { loadState } from "../server/state";
 
 const server = setupServer(...handlers);
 const BASE = "http://localhost:3000";
@@ -63,6 +64,37 @@ describe("mock API over HTTP", () => {
 
     expect(ahead).toBeGreaterThanOrEqual(90_000);
     expect(ahead).toBeLessThan(92_000);
+  });
+
+  it("TC-16: two Pay requests at once with the same key make one order", async () => {
+    await post("/api/cart/items", { idempotencyKey: "item-1", config: itemA, qty: 1 });
+    const body = { idempotencyKey: "pay-1", paymentMethod: "cash", couponCode: null };
+
+    const [first, second] = await Promise.all([
+      post("/api/checkout", body),
+      post("/api/checkout", body),
+    ]);
+    const a = await first.json();
+    const b = await second.json();
+    const ordersFile = await (await fetch(BASE + "/api/orders")).json();
+    const cart = await (await fetch(BASE + "/api/cart")).json();
+
+    expect(a.order.id).toBe("ORD-1007");
+    expect(b.order.id).toBe("ORD-1007");
+    expect(ordersFile.orders).toHaveLength(7); // 6 seeds + 1
+    expect(cart.items).toHaveLength(0);
+    expect(cart.freeStock.egg).toBe(8); // sold, not released
+  });
+
+  it("TC-17: orders survive a refresh (saved in localStorage)", async () => {
+    await post("/api/cart/items", { idempotencyKey: "item-2", config: itemA, qty: 1 });
+    await post("/api/checkout", { idempotencyKey: "pay-2", paymentMethod: "card", couponCode: null });
+
+    // A refresh starts the server again from what was saved.
+    const saved = loadState();
+
+    expect(saved?.orders.map((o) => o.id)).toContain("ORD-1007");
+    expect(saved?.reservations).toHaveLength(0);
   });
 
   it("/api/price returns the breakdown", async () => {

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "currency": "BDT",
+  "note": "Seed orders for the Sales assistant. Prices are NOT included on purpose: compute them with your own pricing engine and the order time (Asia/Dhaka).",
+  "orders": [
+    {
+      "id": "ORD-1001",
+      "createdAt": "2026-11-20T09:15:00+06:00",
+      "paymentMethod": "card",
+      "couponCode": "MORNING15",
+      "lines": [
+        { "qty": 1, "options": { "toast": 1, "scrambled": 2, "sausage": 1, "ketchup": 1 } }
+      ]
+    },
+    {
+      "id": "ORD-1002",
+      "createdAt": "2026-11-20T12:40:00+06:00",
+      "paymentMethod": "bkash",
+      "couponCode": null,
+      "lines": [
+        { "qty": 1, "options": { "croissant": 1, "omelette": 2, "fried": 2, "sausage": 1, "bacon": 1, "hashbrown": 1, "mushroom": 1, "hollandaise": 1 } }
+      ]
+    },
+    {
+      "id": "ORD-1003",
+      "createdAt": "2026-11-21T10:05:00+06:00",
+      "paymentMethod": "cash",
+      "couponCode": "MORNING15",
+      "lines": [
+        { "qty": 2, "options": { "paratha": 1, "fried": 2, "tofu": 1, "cheese": 2, "beans": 1, "mushroom": 1, "chili": 1 } },
+        { "qty": 1, "options": { "toast": 1, "scrambled": 2, "sausage": 1, "ketchup": 1 } }
+      ]
+    },
+    {
+      "id": "ORD-1004",
+      "createdAt": "2026-11-21T19:30:00+06:00",
+      "paymentMethod": "card",
+      "couponCode": null,
+      "lines": [
+        { "qty": 1, "options": { "toast": 1, "omelette": 2, "bacon": 1, "hashbrown": 1, "beans": 1, "mushroom": 1 } }
+      ]
+    },
+    {
+      "id": "ORD-1005",
+      "createdAt": "2026-11-22T08:50:00+06:00",
+      "paymentMethod": "bkash",
+      "couponCode": "MORNING15",
+      "lines": [
+        { "qty": 2, "options": { "paratha": 1, "scrambled": 2, "sausage": 2, "hollandaise": 1 } }
+      ]
+    },
+    {
+      "id": "ORD-1006",
+      "createdAt": "2026-11-22T13:10:00+06:00",
+      "paymentMethod": "card",
+      "couponCode": "MORNING15",
+      "lines": [
+        { "qty": 1, "options": { "croissant": 1, "omelette": 2, "fried": 2, "sausage": 1, "bacon": 1, "hashbrown": 1, "mushroom": 1, "hollandaise": 1 } },
+        { "qty": 1, "options": { "croissant": 1, "fried": 2, "tofu": 1, "cheese": 2 } }
+      ]
+    }
+  ]
+}
