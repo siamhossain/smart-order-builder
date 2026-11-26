@@ -140,3 +140,11 @@ The Gemini API is always mocked in tests, so no key or network is needed.
 
 - **Part G (bonus):** reservations already survive a refresh, because server state is saved and expired ones are released on the next request. Not done: cart version numbers for two-tab conflict detection, and saving an unfinished configuration across a refresh.
 - A tab only finds out about another tab's changes when it next talks to the server. After a refused save it reloads the cart, but there is no polling.
+
+## Time spent
+
+About 24+ hours over 2 days (25 and 26 November 2026), worked in short sessions with breaks.
+
+## Use of AI
+
+I used an AI coding assistant while building this project. It helped me break the brief into small parts, plan the architecture, write and test the code, and draft the docs. I worked through it part by part, ran the app and the tests myself, checked the answers against the brief, and asked for changes when something was wrong. I made the final decisions.
