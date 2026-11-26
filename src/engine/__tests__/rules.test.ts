@@ -78,6 +78,24 @@ describe("Part A - rules engine", () => {
     ]);
   });
 
+  it("1 egg breaks min and step but shows the message only once", () => {
+    const violations = check({ toast: 1, scrambled: 1, sausage: 1 });
+
+    expect(violations).toEqual([
+      {
+        groupId: "eggs",
+        ruleId: "eggs-min",
+        message: "Eggs total must be 2-6 in steps of 2 (you have 1)",
+      },
+    ]);
+  });
+
+  it("7 eggs breaks max and step but shows the message only once", () => {
+    const violations = check({ toast: 1, scrambled: 7, sausage: 1 });
+
+    expect(violations.map((v) => v.ruleId)).toEqual(["eggs-max"]);
+  });
+
   it("Scrambled x1 + Fried x1 is valid", () => {
     expect(check({ toast: 1, scrambled: 1, fried: 1, sausage: 1 })).toEqual([]);
   });

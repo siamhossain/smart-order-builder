@@ -69,34 +69,32 @@ export function validate(
     if (group.step) limitText += ` in steps of ${group.step}`;
     const youHave = ` (you have ${total})`;
 
-    if (total < group.min) {
+    const belowMin = total < group.min;
+    const aboveMax = max !== undefined && total > max;
+    const offStep = group.step !== undefined && group.step > 0 && total % group.step !== 0;
+
+    // A broken override gets its own, clearer message.
+    if (aboveMax && override?.type === "overrideLimit") {
       violations.push({
         groupId: group.id,
-        ruleId: `${group.id}-min`,
-        message: limitText + youHave,
+        ruleId: override.id,
+        message: `${group.name} max is ${max} when ${nameOf(override.optionId)} is selected${youHave}`,
       });
     }
 
-    if (max !== undefined && total > max) {
-      if (override?.type === "overrideLimit") {
-        violations.push({
-          groupId: group.id,
-          ruleId: override.id,
-          message: `${group.name} max is ${max} when ${nameOf(override.optionId)} is selected${youHave}`,
-        });
-      } else {
-        violations.push({
-          groupId: group.id,
-          ruleId: `${group.id}-max`,
-          message: limitText + youHave,
-        });
-      }
-    }
+    // Min, max and step share ONE sentence, so they are ONE violation.
+    // Example: 1 egg breaks both min (2) and step (2); the user should see
+    // "Eggs total must be 2-6 in steps of 2 (you have 1)" once, not twice.
+    // The ruleId names the first limit that is broken.
+    let brokenLimit: "min" | "max" | "step" | null = null;
+    if (belowMin) brokenLimit = "min";
+    else if (aboveMax && !override) brokenLimit = "max";
+    else if (offStep) brokenLimit = "step";
 
-    if (group.step && total % group.step !== 0) {
+    if (brokenLimit) {
       violations.push({
         groupId: group.id,
-        ruleId: `${group.id}-step`,
+        ruleId: `${group.id}-${brokenLimit}`,
         message: limitText + youHave,
       });
     }
