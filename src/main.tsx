@@ -7,7 +7,8 @@ async function enableMocking() {
   if (import.meta.env.DEV) {
     const { worker } = await import("./mocks/browser");
 
-    await worker.start();
+    // Requests MSW has no handler for (e.g. Gemini) go to the real network.
+    await worker.start({ onUnhandledFrame: "bypass" });
   }
 }
 

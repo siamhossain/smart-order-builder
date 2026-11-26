@@ -15,6 +15,11 @@ export function getClockOffset(): number {
   return clockOffset;
 }
 
+// The server's current time, as the browser best knows it.
+export function serverNow(): Date {
+  return new Date(Date.now() + clockOffset);
+}
+
 export class ApiRequestError extends Error {
   code: ApiErrorCode;
   status: number;

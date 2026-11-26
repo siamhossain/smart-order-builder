@@ -311,3 +311,61 @@ select {
   font-weight: 700;
   border-bottom: none;
 }
+
+.panel + .panel {
+  margin-top: 16px;
+}
+
+.examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.examples button {
+  font-size: 0.85rem;
+}
+
+.chat {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bubble {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.bubble.staff {
+  align-self: flex-end;
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.bubble.bot {
+  align-self: flex-start;
+  background: var(--bg);
+}
+
+.bubble.error {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.chat-form {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-form input {
+  flex: 1;
+  min-width: 0;
+}

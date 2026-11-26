@@ -5,6 +5,7 @@ import { getClockOffset } from "./api/client";
 import { Builder } from "./components/Builder";
 import { CartPanel } from "./components/CartPanel";
 import { OrdersPanel } from "./components/OrdersPanel";
+import { ChatPanel } from "./components/ChatPanel";
 import { useOrders } from "./hooks/useOrders";
 import type { CartItem } from "./types/cart";
 
@@ -83,6 +84,7 @@ function App() {
       </div>
 
       <OrdersPanel orders={orders} menu={menu} />
+      <ChatPanel orders={orders} menu={menu} />
     </main>
   );
 }
