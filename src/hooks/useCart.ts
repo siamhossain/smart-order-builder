@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { api, errorMessage } from "../api/client";
+import { api, ApiRequestError, errorMessage } from "../api/client";
 import type { CartSnapshot } from "../types/cart";
 import type { ProductConfig } from "../types/menu";
 import type { PaymentMethod } from "../types/order";
@@ -35,19 +35,44 @@ export function useCart() {
     };
   }, []);
 
+  // D1: if the server says our view is out of date (another tab took the
+  // stock, the item expired or is gone), reload the cart so the screen shows
+  // the real stock and status. The error is still thrown so the builder can
+  // show it - and the user's configuration stays in the builder.
+  const reloadIfStale = useCallback(
+    async (error: unknown) => {
+      if (
+        error instanceof ApiRequestError &&
+        ["OUT_OF_STOCK", "EXPIRED", "NOT_FOUND"].includes(error.code)
+      ) {
+        await refresh();
+      }
+      throw error;
+    },
+    [refresh],
+  );
+
   // add / update throw on failure so the builder can show the error + Retry.
   const add = useCallback(
     async (config: ProductConfig, qty: number, idempotencyKey: string) => {
-      setCart(await api.addItem(config, qty, idempotencyKey));
+      try {
+        setCart(await api.addItem(config, qty, idempotencyKey));
+      } catch (error) {
+        await reloadIfStale(error);
+      }
     },
-    [],
+    [reloadIfStale],
   );
 
   const update = useCallback(
     async (itemId: string, config: ProductConfig, qty: number) => {
-      setCart(await api.updateItem(itemId, config, qty));
+      try {
+        setCart(await api.updateItem(itemId, config, qty));
+      } catch (error) {
+        await reloadIfStale(error);
+      }
     },
-    [],
+    [reloadIfStale],
   );
 
   const remove = useCallback(async (itemId: string) => {
