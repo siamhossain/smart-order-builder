@@ -6,9 +6,7 @@ import { priceSeedOrders } from "./orders";
 
 export const RESERVATION_MS = 5 * 60 * 1000; // 5 minutes
 
-// A reservation holds stock for one cart item.
-// `allocation` is the exact amount it holds, so releasing it gives back
-// exactly that much - never more.
+// Stock held for one cart item. `allocation` is exactly what it holds.
 export interface Reservation {
   id: string;
   config: ProductConfig;
@@ -19,8 +17,7 @@ export interface Reservation {
   status: "active" | "expired";
 }
 
-// Everything the fake server knows. It is a plain object so the cart
-// functions can take one state and return a NEW state (never edit in place).
+// Everything the mock server knows. Never edited in place.
 export interface ServerState {
   stock: Ingredients; // starting stock from the menu
   sold: Ingredients; // stock that was paid for (Part E)
@@ -32,8 +29,7 @@ export interface ServerState {
   checkouts: Record<string, string>;
 }
 
-// First start: full stock, empty cart, and the seed orders priced by our
-// own engine.
+// First start: full stock, empty cart, seed orders priced by our engine.
 export function initialState(menu: MenuData): ServerState {
   return {
     stock: { ...menu.ingredientStock },
@@ -46,8 +42,7 @@ export function initialState(menu: MenuData): ServerState {
 }
 
 // ---- Persistence ----
-// The "database" is localStorage so the server survives a page refresh.
-// In tests (Node) there is no localStorage, so these do nothing.
+// localStorage is the "database". In tests it doesn't exist, so these do nothing.
 
 const STORAGE_KEY = "smart-order-builder:server";
 

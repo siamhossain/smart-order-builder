@@ -1,16 +1,9 @@
 import { runTool, toolDeclarations, type ToolContext } from "./tools";
 
-// Part F - talk to Gemini with function calling.
-//
-// 1. We send the question + the list of tools (no order data at all).
-// 2. Gemini answers "call tool X with args Y".
-// 3. Our code runs X on the current orders and sends the result back.
-// 4. Gemini turns that result into a sentence.
-// Every number in the answer therefore comes from our own code.
+// Part F - Gemini with function calling. Gemini picks a tool, our code runs
+// it on the orders, Gemini only writes the sentence. It never sees the orders.
 
-// Flash models to try, in order. Free-tier Flash models are sometimes
-// overloaded (503) or very slow; then we try the next one. If the
-// VITE_GEMINI_MODEL env variable is set, only that model is used.
+// Tried in order when one is busy or slow. VITE_GEMINI_MODEL forces one.
 export const GEMINI_MODELS: string[] = import.meta.env.VITE_GEMINI_MODEL
   ? [import.meta.env.VITE_GEMINI_MODEL]
   : ["gemini-3.8-flash", "gemini-3.5-flash-lite"];
@@ -35,9 +28,7 @@ export class ChatError extends Error {
   }
 }
 
-// D5: when the model answers WITHOUT calling any tool, it has no real data,
-// so the answer must not contain numbers. If it does, we replace it with
-// this safe reply instead of showing a possibly invented figure.
+// D5: shown instead of a no-tool answer that contains a number.
 export const NO_DATA_REPLY =
   "I can only answer from the order data, and I couldn't find that in it. " +
   "I can tell you about order counts, revenue, best-selling options, payment methods, " +
@@ -120,8 +111,7 @@ function toChatError(status: number, data: { error?: { message?: string; status?
 // Errors where another model might still work.
 const TRY_NEXT_MODEL: ChatErrorKind[] = ["busy", "modelUnavailable", "network"];
 
-// Try each model in order until one answers. If all fail, report the last
-// error (a real network problem fails on every model, so it still shows).
+// Try each model until one answers. If all fail, report the last error.
 async function firstWorkingModel(apiKey: string, models: string[], today: string, contents: Content[]) {
   let lastError: unknown = new ChatError("other", "No Gemini model configured.");
   for (const model of models) {
@@ -156,13 +146,11 @@ export async function askAssistant(
   }
   const models = options.models ?? GEMINI_MODELS;
 
-  // Each question starts a fresh conversation, so an old answer can never
-  // be reused for numbers: every answer is calculated from current orders.
+  // Fresh conversation per question, so numbers always come from current orders.
   const contents: Content[] = [{ role: "user", parts: [{ text: question }] }];
   const toolsUsed: string[] = [];
 
-  // The model that answered the first call; the follow-up calls for the
-  // same question stay on it.
+  // Follow-up calls for this question stay on the same model.
   let model: string | null = null;
 
   for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
@@ -190,8 +178,7 @@ export async function askAssistant(
       return { answer: text || NO_DATA_REPLY, toolsUsed };
     }
 
-    // Keep the model's turn exactly as sent (it may carry a thoughtSignature
-    // that Gemini needs back), then add our tool results.
+    // Send the model's turn back unchanged (Gemini needs its thoughtSignature).
     contents.push(content);
     contents.push({
       role: "user",

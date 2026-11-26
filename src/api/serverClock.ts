@@ -1,11 +1,5 @@
-// The browser's clock and the server's clock are different (the mock server
-// runs 90 s ahead). Countdowns and expiry must use SERVER time.
-//
-// offset = serverTime - browserTime. Then: server now = Date.now() + offset.
-//
-// The response takes some time to arrive, so we compare serverTime with the
-// MIDDLE of the request (between sending and receiving). That cancels most of
-// the network delay.
+// The server clock is 90 s ahead, so countdowns use server time.
+// offset = serverTime - middle of the request (cancels most network delay).
 
 export function computeOffset(
   serverTimeIso: string,

@@ -1,15 +1,11 @@
 import type { MenuData, MenuOption, ProductConfig } from "../types/menu";
 
-// Part B - ingredient-based shared stock. All pure functions.
-//
+// Part B - shared ingredient stock. Pure functions.
 // Ingredient id -> amount, e.g. { egg: 6, croissant: 1 }.
-// Used for stock, for what an item uses (its "allocation"), and for what is
-// still free.
 export type Ingredients = Record<string, number>;
 
-// How many ingredients ONE configured item uses, times its cart quantity.
-// B x1 -> { croissant: 1, egg: 6, sausage: 1, bacon: 1, ... }
-// (Omelette x2 uses 2 eggs each = 4, Fried x2 uses 1 each = 2, total 6.)
+// Ingredients one item uses, times its quantity.
+// B x1 -> { croissant: 1, egg: 6, ... } (Omelette x2 = 4 eggs + Fried x2 = 2)
 export function usageOf(
   config: ProductConfig,
   qty: number,
@@ -40,8 +36,7 @@ export function addIngredients(a: Ingredients, b: Ingredients): Ingredients {
   return result;
 }
 
-// What is still free: total stock minus everything currently held.
-// The server calls this with every active reservation's allocation.
+// Free = stock minus everything currently held.
 export function freeStock(
   stock: Ingredients,
   allocations: Ingredients[],
@@ -55,10 +50,8 @@ export function freeStock(
   return free;
 }
 
-// Net-difference rule for editing: the item's OWN current allocation counts
-// as available to itself. So when editing B (which holds 6 eggs), we add
-// those 6 eggs back before checking the new version of B.
-// For a brand new item, pass no ownAllocation.
+// Net-difference rule: when editing, the item's own allocation is added back
+// before checking. A new item passes no ownAllocation.
 export function availableFor(
   free: Ingredients,
   ownAllocation: Ingredients = {},
@@ -71,10 +64,8 @@ export interface Shortage {
   missing: number;
 }
 
-// Every ingredient where we need more than is available, with the exact
-// missing amount. An ingredient not in the stock list counts as 0 available
-// (safer than overselling). Options with no ingredients (Ketchup) never
-// appear here, so they are unlimited.
+// Every ingredient we need more of, with the missing amount.
+// An ingredient missing from stock counts as 0, so we never oversell.
 export function findShortages(
   needed: Ingredients,
   available: Ingredients,
@@ -93,9 +84,7 @@ export function shortageMessage(shortages: Shortage[]): string {
   return `Short: ${parts.join(", ")}`;
 }
 
-// How many MORE units of `option` can be added to the config being built,
-// right now. The UI disables the option when this is 0.
-// Returns Infinity for options that use no stock (Ketchup, Chili).
+// How many more units of `option` fit right now (Infinity if it uses no stock).
 export function maxMoreUnits(
   option: MenuOption,
   config: ProductConfig,

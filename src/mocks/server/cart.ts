@@ -11,12 +11,8 @@ import {
 } from "../../engine/stock";
 import { RESERVATION_MS, type Reservation, type ServerState } from "./state";
 
-// Part D - the server side of the cart.
-//
-// Every function takes the current state and returns a NEW state. It never
-// changes the old one. The HTTP handler only saves the new state at the very
-// end, so if anything fails half-way the old state is still untouched:
-// that is how we guarantee "all or nothing" with no phantom reservations.
+// Part D - server side of the cart. Each function returns a NEW state and the
+// handler saves only at the end, so a failure leaves nothing half done.
 
 export type Result =
   | { ok: true; state: ServerState; itemId?: string }
@@ -24,9 +20,7 @@ export type Result =
 
 const MAX_ITEM_QTY = 3;
 
-// Mark reservations whose time is up as expired. Expired ones stop holding
-// stock (freeStockOf ignores them) but stay in the list so the user can see
-// them read-only and remove them.
+// Mark timed-out reservations expired. They stop holding stock but stay visible.
 export function expireReservations(state: ServerState, now: number): ServerState {
   const hasExpired = state.reservations.some(
     (r) => r.status === "active" && r.expiresAt <= now,
@@ -71,8 +65,7 @@ function checkItem(
   return null;
 }
 
-// Add to Cart. The idempotency key makes double/triple clicks safe:
-// the same key always returns the same item instead of creating a new one.
+// Add to Cart. The same idempotency key returns the same item (no duplicates).
 export function reserveItem(
   state: ServerState,
   menu: MenuData,
@@ -119,10 +112,8 @@ export function reserveItem(
   };
 }
 
-// Edit = ONE call that swaps the old allocation for the new one.
-// Net-difference rule: the item's own allocation counts as available to it.
-// The expiry time is NOT reset, so an item cannot hold stock forever by
-// being edited again and again.
+// Edit swaps the old allocation for the new one (net difference).
+// The expiry is not reset, so editing can't hold stock forever.
 export function updateItem(
   state: ServerState,
   menu: MenuData,
@@ -169,9 +160,7 @@ export function updateItem(
   };
 }
 
-// Remove releases the stock (an expired item already released it).
-// Removing an item that is already gone is fine: a double click on Remove
-// should not show an error.
+// Remove releases the stock. Removing a missing item is fine (double click).
 export function removeItem(state: ServerState, itemId: string): Result {
   return {
     ok: true,

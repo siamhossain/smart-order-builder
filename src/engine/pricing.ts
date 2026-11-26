@@ -16,11 +16,8 @@ import type {
 } from "../types/pricing";
 import { formatBDT, percentOf, roundToWholeTaka } from "./money";
 
-// Part C - pricing engine.
-// Pure function shared by the mock server (/price, checkout) and the tests.
-// All amounts are integer poisha. Steps follow the brief in exact order:
-//   1 unit subtotal  2 P2 free cheapest  3 P1 combo %  4 line totals
-//   5 one cart discount  6 VAT, then round payable to whole taka
+// Part C - pricing engine. Integer poisha, steps in the brief's order:
+// 1 unit price, 2 P2, 3 P1, 4 line totals, 5 one cart discount, 6 VAT + rounding
 export function priceCart(
   cart: CartInput,
   menu: MenuData,
@@ -74,8 +71,7 @@ export function priceLine(
     }
   }
 
-  // Steps 2-3: unit promotions, in the order they are listed.
-  // Each one works on the amount left after the previous one.
+  // Steps 2-3: unit promotions in listed order, each on what's left.
   let unitPrice = unitBase;
   const unitDiscounts: AppliedDiscount[] = [];
 
@@ -203,10 +199,8 @@ function pickCartDiscount(
   return { cartDiscount: best, coupon };
 }
 
-// Is `time` strictly before "HH:MM" on the clock of `timeZone`?
-// 10:59:59 Dhaka -> true, 11:00:00 Dhaka -> false.
-// Intl gives us the wall-clock time in that zone, so this works no matter
-// which time zone the browser (or the reviewer's computer) is in.
+// Is `time` strictly before "HH:MM" in `timeZone`? 10:59:59 -> true, 11:00 -> false.
+// Uses Intl, so the computer's own time zone doesn't matter.
 export function isBeforeTimeOfDay(
   time: Date,
   hhmm: string,

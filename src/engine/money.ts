@@ -1,10 +1,7 @@
 import type { Poisha } from "../types/menu";
 
-// percent% of an amount, rounded HALF-UP to the nearest poisha.
-// Only integer maths: amount * percent is an exact integer, then we divide
-// by 100 with "+50 then floor", which is the classic half-up trick.
-//   percentOf(150950, 5) -> 754750 / 100 = 7547.5 -> 7548 (75.48 BDT)
-// Assumes amount >= 0 and a whole-number percent (true for this menu).
+// percent% of amount, half-up, integer only ("+50 then floor").
+//   percentOf(150950, 5) -> 7547.5 -> 7548 (75.48 BDT)
 export function percentOf(amount: Poisha, percent: number): Poisha {
   return Math.floor((amount * percent + 50) / 100);
 }

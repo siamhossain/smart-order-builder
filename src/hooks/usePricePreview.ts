@@ -15,17 +15,10 @@ type Answer =
 
 const DEBOUNCE_MS = 300;
 
-// Live price from the mock /price endpoint while the user configures.
-//
-// Three problems to solve:
-// 1. Too many requests: wait 300 ms after the LAST change (debounce).
-// 2. Old answers arriving late: every answer is stored WITH the key of the
-//    request it belongs to (the config as JSON + retry number). We only show
-//    an answer whose key equals the CURRENT key, so an older configuration's
-//    price can never be displayed. We also abort the old request, so most
-//    stale answers never even arrive.
-// 3. Failures (15%): show an error with Retry; the configuration is kept
-//    because it lives in the builder, not here.
+// Live price from /price.
+// - 300 ms debounce
+// - only an answer whose key matches the CURRENT config is shown; old requests are aborted
+// - on failure show Retry (the config lives in the builder, so it's kept)
 export function usePricePreview(input: CartInput | null) {
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -43,8 +36,7 @@ export function usePricePreview(input: CartInput | null) {
     const timer = setTimeout(async () => {
       try {
         const { breakdown } = await api.getPrice(requestInput, controller.signal);
-        // The config changed while we waited: this answer is stale, drop it
-        // so it can't replace the newer config's answer.
+        // Stale answer for an old config: drop it.
         if (controller.signal.aborted) return;
         setAnswer({ key: requestKey, status: "ok", breakdown });
       } catch (error) {

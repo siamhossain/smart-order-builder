@@ -5,11 +5,7 @@ import type {
   ValidationViolation,
 } from "../types/menu";
 
-// Part A - rules engine.
-// Pure function: same input always gives the same output, no React, no fetch.
-// Returns EVERY violation (not just the first) so the UI can list them all.
-// Nothing here knows about "eggs" or "croissant": everything comes from
-// `groups` and `rules`, so a different menu works without code changes.
+// Part A - rules engine. Pure, returns EVERY violation, no menu ids hardcoded.
 export function validate(
   config: ProductConfig,
   groups: MenuGroup[],
@@ -82,10 +78,7 @@ export function validate(
       });
     }
 
-    // Min, max and step share ONE sentence, so they are ONE violation.
-    // Example: 1 egg breaks both min (2) and step (2); the user should see
-    // "Eggs total must be 2-6 in steps of 2 (you have 1)" once, not twice.
-    // The ruleId names the first limit that is broken.
+    // Min, max and step give ONE violation, so 1 egg doesn't show it twice.
     let brokenLimit: "min" | "max" | "step" | null = null;
     if (belowMin) brokenLimit = "min";
     else if (aboveMax && !override) brokenLimit = "max";
