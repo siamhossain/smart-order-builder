@@ -18,16 +18,22 @@ export function PriceBreakdownView({ breakdown, menu, showLines = true }: Props)
           breakdown.lines.map((line, index) => (
             <tr key={index}>
               <td>
-                {breakdown.lines.length > 1 ? `Item ${index + 1}: ` : "Unit: "}
-                {formatBDT(line.unitBase)}
+                {breakdown.lines.length > 1 && <strong>Item {index + 1}</strong>}
+                {/* Step 1: every breakfast = base price + the options chosen */}
+                <div>
+                  Base {formatBDT(menu.product.basePrice)} + options{" "}
+                  {formatBDT(line.unitBase - menu.product.basePrice)} ={" "}
+                  {formatBDT(line.unitBase)}
+                </div>
+                {/* Steps 2-3: unit promotions (extras deal, combo) */}
                 {line.unitDiscounts.map((d) => (
-                  <span key={d.promotionId} className="muted">
-                    {" "}
+                  <div key={d.promotionId} className="muted">
                     − {promotionLabel(d.promotionId, menu)} {formatBDT(d.amount)}
-                  </span>
+                  </div>
                 ))}
-                {" = "}
-                {formatBDT(line.unitPrice)} × {line.qty}
+                <div>
+                  Unit price {formatBDT(line.unitPrice)} × {line.qty}
+                </div>
               </td>
               <td className="num">{formatBDT(line.lineTotal)}</td>
             </tr>
