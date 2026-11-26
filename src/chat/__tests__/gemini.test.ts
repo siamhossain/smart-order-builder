@@ -19,10 +19,10 @@ const sayText = (text: string) => ({
 
 // Make fetch return these responses in order, and record every request body.
 function mockGemini(...replies: { status?: number; body: unknown }[]) {
-  const requests: { body: Record<string, unknown> }[] = [];
+  const requests: { url: string; body: Record<string, unknown> }[] = [];
   const queue = [...replies];
-  vi.spyOn(globalThis, "fetch").mockImplementation(async (_url, init) => {
-    requests.push({ body: JSON.parse(String(init?.body)) });
+  vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+    requests.push({ url: String(url), body: JSON.parse(String(init?.body)) });
     const reply = queue.shift()!;
     return new Response(JSON.stringify(reply.body), { status: reply.status ?? 200 });
   });
@@ -30,7 +30,7 @@ function mockGemini(...replies: { status?: number; body: unknown }[]) {
 }
 
 function ask(question: string, orders: StoredOrder[] = seed, apiKey: string | undefined = "test-key") {
-  return askAssistant(question, { apiKey, ctx: { orders, menu: menuData }, today: TODAY, model: "test-model" });
+  return askAssistant(question, { apiKey, ctx: { orders, menu: menuData }, today: TODAY, models: ["test-model"] });
 }
 
 // The function result we sent back to Gemini in request number `index`.
@@ -152,6 +152,42 @@ describe("Part F - error messages", () => {
   it("busy (503)", async () => {
     mockGemini({ status: 503, body: { error: { message: "high demand" } } });
     expect(await errorKind(ask("How many orders?"))).toBe("busy");
+  });
+
+  it("busy model: falls back to the next Flash model and stays on it", async () => {
+    const requests = mockGemini(
+      { status: 503, body: { error: { message: "high demand" } } },
+      { body: callTool("countOrders") },
+      { body: sayText("There are 6 orders.") },
+    );
+
+    const reply = await askAssistant("How many orders?", {
+      apiKey: "test-key",
+      ctx: { orders: seed, menu: menuData },
+      today: TODAY,
+      models: ["model-a", "model-b"],
+    });
+
+    expect(reply.answer).toBe("There are 6 orders.");
+    expect(requests.map((r) => r.url.split("/").pop())).toEqual([
+      "model-a:generateContent",
+      "model-b:generateContent",
+      "model-b:generateContent",
+    ]);
+  });
+
+  it("quota error does not try other models", async () => {
+    const requests = mockGemini({ status: 429, body: { error: { message: "Resource exhausted" } } });
+
+    const promise = askAssistant("How many orders?", {
+      apiKey: "test-key",
+      ctx: { orders: seed, menu: menuData },
+      today: TODAY,
+      models: ["model-a", "model-b"],
+    });
+
+    expect(await errorKind(promise)).toBe("quota");
+    expect(requests).toHaveLength(1);
   });
 
   it("network error", async () => {

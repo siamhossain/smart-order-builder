@@ -8,11 +8,24 @@ import { runTool, toolDeclarations, type ToolContext } from "./tools";
 // 4. Gemini turns that result into a sentence.
 // Every number in the answer therefore comes from our own code.
 
-export const GEMINI_MODEL: string = import.meta.env.VITE_GEMINI_MODEL || "gemini-3.8-flash";
+// Flash models to try, in order. Free-tier Flash models are sometimes
+// overloaded (503) or very slow; then we try the next one. If the
+// VITE_GEMINI_MODEL env variable is set, only that model is used.
+export const GEMINI_MODELS: string[] = import.meta.env.VITE_GEMINI_MODEL
+  ? [import.meta.env.VITE_GEMINI_MODEL]
+  : ["gemini-3.8-flash", "gemini-3.5-flash-lite"];
 const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const MAX_TOOL_ROUNDS = 3;
+const TIMEOUT_MS = 20_000;
 
-export type ChatErrorKind = "missingKey" | "invalidKey" | "quota" | "busy" | "network" | "other";
+export type ChatErrorKind =
+  | "missingKey"
+  | "invalidKey"
+  | "quota"
+  | "busy" // overloaded (503) or too slow
+  | "modelUnavailable" // this model can't be used with this key (404)
+  | "network"
+  | "other";
 
 export class ChatError extends Error {
   kind: ChatErrorKind;
@@ -70,8 +83,13 @@ async function callGemini(apiKey: string, model: string, today: string, contents
         tools: [{ functionDeclarations: toolDeclarations }],
         generationConfig: { temperature: 0 },
       }),
+      // Give up on a model that hangs, so the user isn't left waiting.
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "TimeoutError") {
+      throw new ChatError("busy", "Gemini took too long to answer. Please try again in a moment.");
+    }
     throw new ChatError("network", "Could not reach Gemini. Check your internet connection and try again.");
   }
 
@@ -94,9 +112,30 @@ function toChatError(status: number, data: { error?: { message?: string; status?
     return new ChatError("busy", "Gemini is busy right now. Please try again in a moment.");
   }
   if (status === 404) {
-    return new ChatError("other", `The model "${model}" is not available for this key. Set VITE_GEMINI_MODEL in .env.local.`);
+    return new ChatError("modelUnavailable", `The model "${model}" is not available for this key. Set VITE_GEMINI_MODEL in .env.local.`);
   }
   return new ChatError("other", `Gemini error ${status}: ${message || "unknown error"}`);
+}
+
+// Errors where another model might still work.
+const TRY_NEXT_MODEL: ChatErrorKind[] = ["busy", "modelUnavailable", "network"];
+
+// Try each model in order until one answers. If all fail, report the last
+// error (a real network problem fails on every model, so it still shows).
+async function firstWorkingModel(apiKey: string, models: string[], today: string, contents: Content[]) {
+  let lastError: unknown = new ChatError("other", "No Gemini model configured.");
+  for (const model of models) {
+    try {
+      return { model, data: await callGemini(apiKey, model, today, contents) };
+    } catch (error) {
+      if (error instanceof ChatError && TRY_NEXT_MODEL.includes(error.kind)) {
+        lastError = error;
+        continue;
+      }
+      throw error; // wrong key, quota...: another model won't help
+    }
+  }
+  throw lastError;
 }
 
 export interface AssistantReply {
@@ -106,7 +145,7 @@ export interface AssistantReply {
 
 export async function askAssistant(
   question: string,
-  options: { apiKey: string | undefined; ctx: ToolContext; today: string; model?: string },
+  options: { apiKey: string | undefined; ctx: ToolContext; today: string; models?: string[] },
 ): Promise<AssistantReply> {
   const apiKey = options.apiKey?.trim();
   if (!apiKey) {
@@ -115,15 +154,26 @@ export async function askAssistant(
       "No Gemini API key. Add VITE_GEMINI_API_KEY=your-key to .env.local and restart npm run dev.",
     );
   }
-  const model = options.model ?? GEMINI_MODEL;
+  const models = options.models ?? GEMINI_MODELS;
 
   // Each question starts a fresh conversation, so an old answer can never
   // be reused for numbers: every answer is calculated from current orders.
   const contents: Content[] = [{ role: "user", parts: [{ text: question }] }];
   const toolsUsed: string[] = [];
 
+  // The model that answered the first call; the follow-up calls for the
+  // same question stay on it.
+  let model: string | null = null;
+
   for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
-    const data = await callGemini(apiKey, model, options.today, contents);
+    let data;
+    if (model === null) {
+      const first = await firstWorkingModel(apiKey, models, options.today, contents);
+      model = first.model;
+      data = first.data;
+    } else {
+      data = await callGemini(apiKey, model, options.today, contents);
+    }
     const content: Content | undefined = data.candidates?.[0]?.content;
     if (!content?.parts) {
       throw new ChatError("other", "Gemini returned an empty answer. Try asking in a different way.");
