@@ -270,3 +270,44 @@ select {
   display: block;
   margin: 12px 0 4px;
 }
+
+.layout + .panel {
+  margin-top: 16px;
+}
+
+.panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Wide tables scroll inside their own box on small screens. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.orders {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 0.9rem;
+}
+
+.orders th,
+.orders td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.orders .num {
+  text-align: right;
+}
+
+.orders tfoot td {
+  font-weight: 700;
+  border-bottom: none;
+}

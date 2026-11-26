@@ -1,6 +1,7 @@
 import type { MenuData, ProductConfig } from "../types/menu";
 import type { ApiError, ApiErrorCode, CartSnapshot } from "../types/cart";
 import type { CartInput, PriceBreakdown } from "../types/pricing";
+import type { OrdersFile, PaymentMethod, StoredOrder } from "../types/order";
 import type { Shortage } from "../engine/stock";
 import { computeOffset } from "./serverClock";
 
@@ -84,6 +85,15 @@ export const api = {
 
   removeItem: (itemId: string) =>
     send<CartSnapshot>("DELETE", `/api/cart/items/${itemId}`),
+
+  checkout: (paymentMethod: PaymentMethod, couponCode: string | null, idempotencyKey: string) =>
+    send<{ order: StoredOrder; cart: CartSnapshot }>("POST", "/api/checkout", {
+      paymentMethod,
+      couponCode,
+      idempotencyKey,
+    }),
+
+  getOrders: () => request<OrdersFile>("/api/orders"),
 
   getPrice: (input: CartInput, signal?: AbortSignal) =>
     send<{ breakdown: PriceBreakdown; serverTime: string }>("POST", "/api/price", input, signal),

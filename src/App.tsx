@@ -4,11 +4,14 @@ import { useCart } from "./hooks/useCart";
 import { getClockOffset } from "./api/client";
 import { Builder } from "./components/Builder";
 import { CartPanel } from "./components/CartPanel";
+import { OrdersPanel } from "./components/OrdersPanel";
+import { useOrders } from "./hooks/useOrders";
 import type { CartItem } from "./types/cart";
 
 function App() {
   const { menu, error: menuError, retry: retryMenu } = useMenu();
-  const { cart, loadError, refresh, add, update, remove } = useCart();
+  const { cart, loadError, refresh, add, update, remove, checkout } = useCart();
+  const { orders, refresh: refreshOrders } = useOrders();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState("");
 
@@ -70,8 +73,16 @@ function App() {
             if (itemId === editingId) setEditingId(null);
           }}
           onRefresh={refresh}
+          onPay={async (paymentMethod, couponCode, idempotencyKey) => {
+            const order = await checkout(paymentMethod, couponCode, idempotencyKey);
+            setEditingId(null);
+            await refreshOrders(); // orders list (and later the chatbot) update at once
+            return order;
+          }}
         />
       </div>
+
+      <OrdersPanel orders={orders} menu={menu} />
     </main>
   );
 }

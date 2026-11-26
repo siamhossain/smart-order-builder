@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api, errorMessage } from "../api/client";
 import type { CartSnapshot } from "../types/cart";
 import type { ProductConfig } from "../types/menu";
+import type { PaymentMethod } from "../types/order";
 
 // The cart lives on the server. We only keep the LAST snapshot it sent us,
 // and every action replaces it with the server's new snapshot.
@@ -53,5 +54,15 @@ export function useCart() {
     setCart(await api.removeItem(itemId));
   }, []);
 
-  return { cart, loadError, refresh, add, update, remove };
+  // Pay. Returns the new order; the server also sends back the empty cart.
+  const checkout = useCallback(
+    async (paymentMethod: PaymentMethod, couponCode: string | null, idempotencyKey: string) => {
+      const result = await api.checkout(paymentMethod, couponCode, idempotencyKey);
+      setCart(result.cart);
+      return result.order;
+    },
+    [],
+  );
+
+  return { cart, loadError, refresh, add, update, remove, checkout };
 }
