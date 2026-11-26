@@ -27,7 +27,8 @@ export type ApiErrorCode =
   | "OUT_OF_STOCK"
   | "NOT_FOUND"
   | "EXPIRED"
-  | "SERVER_ERROR";
+  | "SERVER_ERROR"
+  | "NETWORK"; // browser only: the request never reached the server
 
 export interface ApiError {
   code: ApiErrorCode;
